@@ -59,16 +59,14 @@ func runSTDIO(s *mcp.Server) {
 	}
 }
 
-// runHTTP runs the MCP server over HTTP with SSE.
 func runHTTP(s *mcp.Server, cfg *server.Config) {
 	log.Printf("Starting Mailpit MCP server (HTTP transport, version %s)", server.Version)
 	log.Printf("Listening on %s:%d", cfg.HTTPHost, cfg.HTTPPort)
 	log.Printf("Connecting to Mailpit at %s", cfg.MailpitURL)
 
-	// Create SSE handler
-	handler := mcp.NewSSEHandler(func(r *http.Request) *mcp.Server {
+	handler := mcp.NewStreamableHTTPHandler(func(r *http.Request) *mcp.Server {
 		return s
-	})
+	}, nil)
 
 	// Set up routes
 	mux := http.NewServeMux()

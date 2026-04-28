@@ -1,6 +1,6 @@
 module github.com/amirhmoradi/mailpit-mcp
 
-go 1.24.3
+go 1.25.0
 
 require github.com/modelcontextprotocol/go-sdk v0.2.0
 
