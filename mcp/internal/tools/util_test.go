@@ -7,8 +7,11 @@ import (
 )
 
 func TestTextResult(t *testing.T) {
-	result := textResult("Hello, World!")
+	result, _, err := textResult("Hello, World!")
 
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if result == nil {
 		t.Fatal("expected non-nil result")
 	}
@@ -30,7 +33,7 @@ func TestTextResult(t *testing.T) {
 
 func TestErrorResult(t *testing.T) {
 	err := &testError{msg: "something went wrong"}
-	result := errorResult(err)
+	result, _, _ := errorResult(err)
 
 	if result == nil {
 		t.Fatal("expected non-nil result")

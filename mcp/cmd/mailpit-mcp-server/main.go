@@ -54,7 +54,8 @@ func runSTDIO(s *mcp.Server) {
 		cancel()
 	}()
 
-	if err := s.Run(ctx, mcp.NewStdioTransport()); err != nil {
+	transport := &mcp.StdioTransport{}
+	if err := s.Run(ctx, transport); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}
 }

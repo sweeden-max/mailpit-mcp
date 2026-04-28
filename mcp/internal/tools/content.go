@@ -19,15 +19,15 @@ func RegisterGetMessageHTML(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_message_html",
 		Description: "Get the rendered HTML content of a message. Inline images are linked to the API. Returns 404 if message has no HTML part.",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[GetMessageHTMLArgs]) (*mcp.CallToolResultFor[any], error) {
-		if params.Arguments.ID == "" {
-			return errorResult(fmt.Errorf("id is required")), nil
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args GetMessageHTMLArgs) (*mcp.CallToolResult, any, error) {
+		if args.ID == "" {
+			return errorResult(fmt.Errorf("id is required"))
 		}
-		result, err := c.GetMessageHTML(ctx, params.Arguments.ID)
+		result, err := c.GetMessageHTML(ctx, args.ID)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
-		return textResult(result), nil
+		return textResult(result)
 	})
 }
 
@@ -41,18 +41,18 @@ func RegisterGetMessageText(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_message_text",
 		Description: "Get the plain text content of a message",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[GetMessageTextArgs]) (*mcp.CallToolResultFor[any], error) {
-		if params.Arguments.ID == "" {
-			return errorResult(fmt.Errorf("id is required")), nil
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args GetMessageTextArgs) (*mcp.CallToolResult, any, error) {
+		if args.ID == "" {
+			return errorResult(fmt.Errorf("id is required"))
 		}
-		result, err := c.GetMessageText(ctx, params.Arguments.ID)
+		result, err := c.GetMessageText(ctx, args.ID)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
 		if result == "" {
-			return textResult("(Message has no text content)"), nil
+			return textResult("(Message has no text content)")
 		}
-		return textResult(result), nil
+		return textResult(result)
 	})
 }
 
@@ -67,16 +67,16 @@ func RegisterGetAttachment(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_attachment",
 		Description: "Download an attachment from a message. Returns base64-encoded content for binary files.",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[GetAttachmentArgs]) (*mcp.CallToolResultFor[any], error) {
-		if params.Arguments.MessageID == "" {
-			return errorResult(fmt.Errorf("message_id is required")), nil
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args GetAttachmentArgs) (*mcp.CallToolResult, any, error) {
+		if args.MessageID == "" {
+			return errorResult(fmt.Errorf("message_id is required"))
 		}
-		if params.Arguments.PartID == "" {
-			return errorResult(fmt.Errorf("part_id is required")), nil
+		if args.PartID == "" {
+			return errorResult(fmt.Errorf("part_id is required"))
 		}
-		data, err := c.GetAttachment(ctx, params.Arguments.MessageID, params.Arguments.PartID)
+		data, err := c.GetAttachment(ctx, args.MessageID, args.PartID)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
 
 		// Check if content is text-like (simple heuristic)
@@ -89,12 +89,12 @@ func RegisterGetAttachment(s *mcp.Server, c *client.Client) {
 		}
 
 		if isText {
-			return textResult(string(data)), nil
+			return textResult(string(data))
 		}
 
 		// Return base64 for binary content
 		encoded := base64.StdEncoding.EncodeToString(data)
-		return textResult(fmt.Sprintf("Base64-encoded attachment (%d bytes):\n%s", len(data), encoded)), nil
+		return textResult(fmt.Sprintf("Base64-encoded attachment (%d bytes):\n%s", len(data), encoded))
 	})
 }
 

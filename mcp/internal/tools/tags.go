@@ -17,15 +17,15 @@ func RegisterListTags(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "list_tags",
 		Description: "Get all unique message tags currently in use",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[EmptyArgs]) (*mcp.CallToolResultFor[any], error) {
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args EmptyArgs) (*mcp.CallToolResult, any, error) {
 		result, err := c.ListTags(ctx)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
 		if len(result) == 0 {
-			return textResult("No tags found."), nil
+			return textResult("No tags found.")
 		}
-		return textResult(fmt.Sprintf("Tags (%d):\n  - %s", len(result), strings.Join(result, "\n  - "))), nil
+		return textResult(fmt.Sprintf("Tags (%d):\n  - %s", len(result), strings.Join(result, "\n  - ")))
 	})
 }
 
@@ -40,18 +40,18 @@ func RegisterSetTags(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "set_tags",
 		Description: "Set tags on messages. This overwrites existing tags. Pass empty tags array to remove all tags.",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[SetTagsArgs]) (*mcp.CallToolResultFor[any], error) {
-		if len(params.Arguments.IDs) == 0 {
-			return errorResult(fmt.Errorf("ids is required")), nil
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args SetTagsArgs) (*mcp.CallToolResult, any, error) {
+		if len(args.IDs) == 0 {
+			return errorResult(fmt.Errorf("ids is required"))
 		}
-		err := c.SetTags(ctx, params.Arguments.IDs, params.Arguments.Tags)
+		err := c.SetTags(ctx, args.IDs, args.Tags)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
-		if len(params.Arguments.Tags) == 0 {
-			return textResult(fmt.Sprintf("Removed all tags from %d message(s)", len(params.Arguments.IDs))), nil
+		if len(args.Tags) == 0 {
+			return textResult(fmt.Sprintf("Removed all tags from %d message(s)", len(args.IDs)))
 		}
-		return textResult(fmt.Sprintf("Set tags [%s] on %d message(s)", strings.Join(params.Arguments.Tags, ", "), len(params.Arguments.IDs))), nil
+		return textResult(fmt.Sprintf("Set tags [%s] on %d message(s)", strings.Join(args.Tags, ", "), len(args.IDs)))
 	})
 }
 
@@ -66,18 +66,18 @@ func RegisterRenameTag(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "rename_tag",
 		Description: "Rename an existing tag. Updates all messages with this tag.",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[RenameTagArgs]) (*mcp.CallToolResultFor[any], error) {
-		if params.Arguments.OldName == "" {
-			return errorResult(fmt.Errorf("old_name is required")), nil
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args RenameTagArgs) (*mcp.CallToolResult, any, error) {
+		if args.OldName == "" {
+			return errorResult(fmt.Errorf("old_name is required"))
 		}
-		if params.Arguments.NewName == "" {
-			return errorResult(fmt.Errorf("new_name is required")), nil
+		if args.NewName == "" {
+			return errorResult(fmt.Errorf("new_name is required"))
 		}
-		err := c.RenameTag(ctx, params.Arguments.OldName, params.Arguments.NewName)
+		err := c.RenameTag(ctx, args.OldName, args.NewName)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
-		return textResult(fmt.Sprintf("Renamed tag '%s' to '%s'", params.Arguments.OldName, params.Arguments.NewName)), nil
+		return textResult(fmt.Sprintf("Renamed tag '%s' to '%s'", args.OldName, args.NewName))
 	})
 }
 
@@ -91,15 +91,15 @@ func RegisterDeleteTag(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "delete_tag",
 		Description: "Delete a tag. Removes the tag from all messages but does not delete the messages themselves.",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[DeleteTagArgs]) (*mcp.CallToolResultFor[any], error) {
-		if params.Arguments.Name == "" {
-			return errorResult(fmt.Errorf("name is required")), nil
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args DeleteTagArgs) (*mcp.CallToolResult, any, error) {
+		if args.Name == "" {
+			return errorResult(fmt.Errorf("name is required"))
 		}
-		err := c.DeleteTag(ctx, params.Arguments.Name)
+		err := c.DeleteTag(ctx, args.Name)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
-		return textResult(fmt.Sprintf("Deleted tag '%s'", params.Arguments.Name)), nil
+		return textResult(fmt.Sprintf("Deleted tag '%s'", args.Name))
 	})
 }
 

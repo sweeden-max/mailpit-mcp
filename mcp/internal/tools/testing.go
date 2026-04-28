@@ -34,10 +34,9 @@ func RegisterSendMessage(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "send_message",
 		Description: "Send a test email message via Mailpit's HTTP API. Useful for testing email templates and workflows.",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[SendMessageArgs]) (*mcp.CallToolResultFor[any], error) {
-		args := params.Arguments
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args SendMessageArgs) (*mcp.CallToolResult, any, error) {
 		if args.FromEmail == "" {
-			return errorResult(fmt.Errorf("from_email is required")), nil
+			return errorResult(fmt.Errorf("from_email is required"))
 		}
 
 		// Build the request
@@ -70,7 +69,7 @@ func RegisterSendMessage(s *mcp.Server, c *client.Client) {
 
 		result, err := c.SendMessage(ctx, sendReq)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
 
 		var sb strings.Builder
@@ -86,7 +85,7 @@ func RegisterSendMessage(s *mcp.Server, c *client.Client) {
 		}
 		sb.WriteString(fmt.Sprintf("Subject: %s\n", args.Subject))
 
-		return textResult(sb.String()), nil
+		return textResult(sb.String())
 	})
 }
 
@@ -101,20 +100,20 @@ func RegisterReleaseMessage(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "release_message",
 		Description: "Release (relay) a captured message via the configured external SMTP server. Requires SMTP relay to be configured in Mailpit.",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[ReleaseMessageArgs]) (*mcp.CallToolResultFor[any], error) {
-		if params.Arguments.ID == "" {
-			return errorResult(fmt.Errorf("id is required")), nil
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args ReleaseMessageArgs) (*mcp.CallToolResult, any, error) {
+		if args.ID == "" {
+			return errorResult(fmt.Errorf("id is required"))
 		}
-		if len(params.Arguments.To) == 0 {
-			return errorResult(fmt.Errorf("to is required (at least one recipient)")), nil
+		if len(args.To) == 0 {
+			return errorResult(fmt.Errorf("to is required (at least one recipient)"))
 		}
 
-		err := c.ReleaseMessage(ctx, params.Arguments.ID, params.Arguments.To)
+		err := c.ReleaseMessage(ctx, args.ID, args.To)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
 
-		return textResult(fmt.Sprintf("Message %s released to: %s", params.Arguments.ID, strings.Join(params.Arguments.To, ", "))), nil
+		return textResult(fmt.Sprintf("Message %s released to: %s", args.ID, strings.Join(args.To, ", ")))
 	})
 }
 
@@ -123,12 +122,12 @@ func RegisterGetChaos(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "get_chaos",
 		Description: "Get current Chaos testing triggers configuration. Chaos allows simulating SMTP failures. Requires --enable-chaos flag.",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[EmptyArgs]) (*mcp.CallToolResultFor[any], error) {
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args EmptyArgs) (*mcp.CallToolResult, any, error) {
 		result, err := c.GetChaos(ctx)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
-		return formatChaosResult(result), nil
+		return formatChaosResult(result)
 	})
 }
 
@@ -147,8 +146,7 @@ func RegisterSetChaos(s *mcp.Server, c *client.Client) {
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        "set_chaos",
 		Description: "Set Chaos testing triggers to simulate SMTP failures. Set probability to 0 to disable a trigger. Requires --enable-chaos flag.",
-	}, func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[SetChaosArgs]) (*mcp.CallToolResultFor[any], error) {
-		args := params.Arguments
+	}, func(ctx context.Context, req *mcp.CallToolRequest, args SetChaosArgs) (*mcp.CallToolResult, any, error) {
 		triggers := &client.ChaosTriggers{}
 
 		if args.SenderProbability > 0 || args.SenderErrorCode > 0 {
@@ -172,19 +170,22 @@ func RegisterSetChaos(s *mcp.Server, c *client.Client) {
 
 		result, err := c.SetChaos(ctx, triggers)
 		if err != nil {
-			return errorResult(err), nil
+			return errorResult(err)
 		}
 
 		var sb strings.Builder
 		sb.WriteString("Chaos triggers updated!\n\n")
-		chaosText := formatChaosResult(result)
+		chaosText, _, err := formatChaosResult(result)
+		if err != nil {
+			return errorResult(err)
+		}
 		sb.WriteString(chaosText.Content[0].(*mcp.TextContent).Text)
-		return textResult(sb.String()), nil
+		return textResult(sb.String())
 	})
 }
 
 // formatChaosResult formats chaos triggers.
-func formatChaosResult(result *client.ChaosTriggers) *mcp.CallToolResultFor[any] {
+func formatChaosResult(result *client.ChaosTriggers) (*mcp.CallToolResult, any, error) {
 	var sb strings.Builder
 	sb.WriteString("=== Chaos Testing Configuration ===\n\n")
 
